@@ -1,10 +1,15 @@
-# Cross-linking musl targets without a target-arch C toolchain: the pure
-# Rust dependency tree links fine with rust-lld shipped by rustup.
+# Cross-linking musl targets without a target-arch C toolchain: rust-lld
+# (shipped by rustup) plus the toolchain's bundled musl sysroot. On a musl
+# host (the alpine builder image) rustc assumes system libc by default, so
+# self-contained linking must be forced explicitly.
 [target.x86_64-unknown-linux-musl]
 linker = "rust-lld"
+rustflags = ["-C", "link-self-contained=yes"]
 
 [target.aarch64-unknown-linux-musl]
 linker = "rust-lld"
+rustflags = ["-C", "link-self-contained=yes"]
 
 [target.armv7-unknown-linux-musleabihf]
 linker = "rust-lld"
+rustflags = ["-C", "link-self-contained=yes"]

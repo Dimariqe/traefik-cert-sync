@@ -1,6 +1,9 @@
 # Cross-compiles a static musl binary on the build host (no QEMU needed for
-# compilation) for linux/amd64, linux/arm64 and linux/arm/v7.
-FROM --platform=$BUILDPLATFORM rust:1-alpine AS builder
+# compilation) for linux/amd64, linux/arm64 and linux/arm/v7. The builder is
+# a glibc image on purpose: host artifacts (proc macros) link with the
+# system toolchain, while every musl target links self-contained via
+# rust-lld (see .cargo/config.toml), which needs no cross C toolchain.
+FROM --platform=$BUILDPLATFORM rust:1-bookworm AS builder
 
 ARG TARGETPLATFORM
 

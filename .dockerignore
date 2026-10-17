@@ -1,0 +1,9 @@
+**/.dockerignore
+.git
+.github
+.gitignore
+.gitmodules
+**/Dockerfile
+**/docker-compose.yml
+target
+/dev

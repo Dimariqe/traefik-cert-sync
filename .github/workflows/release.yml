@@ -1,0 +1,67 @@
+name: Release Docker image
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      # Image name is derived from the repository: ghcr.io/<owner>/<repo>.
+      # Docker requires it to be all-lowercase.
+      - name: Compute image name
+        run: echo "IMAGE=ghcr.io/${REPO,,}" >> "$GITHUB_ENV"
+        env:
+          REPO: ${{ github.repository }}
+
+      - name: Prepare tags
+        id: docker_meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=sha
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/') }}
+          flavor: |
+            latest=false
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+        with:
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish image
+        uses: docker/build-push-action@v7
+        with:
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          context: .
+          file: ./Dockerfile
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: ${{ steps.docker_meta.outputs.tags }}
+          labels: ${{ steps.docker_meta.outputs.labels }}
+          push: ${{ github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}

@@ -1,0 +1,55 @@
+# Demo of the server/agent certificate distribution:
+#   docker compose -f docker-compose.agent.yml up --build
+#
+# One "certdumper" server watches the local dummy acme.json and serves the
+# certificates; two agents on the same network fetch them into their own
+# output folders (one dumps everything into per-domain folders, the other
+# only example.com straight into /output).
+version: '3.7'
+
+services:
+  certdumper:
+    build:
+      context: ../.
+      dockerfile: ../Dockerfile
+    environment:
+      SERVER_MODE: "true"
+      SERVER_PORT: "3556"
+      SERVER_KEY: "dev-only-key-change-me"
+    volumes:
+      - ./acme.json:/traefik/acme.json:ro
+      - ./output-server:/output:rw
+    networks:
+      - certs
+
+  agent-all:
+    build:
+      context: ../.
+      dockerfile: ../Dockerfile
+    environment:
+      AGENT_MODE: "true"
+      AGENT_SERVER_ADDRESS: "certdumper:3556"
+      AGENT_KEY: "dev-only-key-change-me"
+      AGENT_POLL_INTERVAL: "10"
+    volumes:
+      - ./output-agent-all:/output:rw
+    networks:
+      - certs
+
+  agent-example:
+    build:
+      context: ../.
+      dockerfile: ../Dockerfile
+    environment:
+      AGENT_MODE: "true"
+      AGENT_SERVER_ADDRESS: "certdumper:3556"
+      AGENT_KEY: "dev-only-key-change-me"
+      AGENT_POLL_INTERVAL: "10"
+      DOMAIN: "example.com"
+    volumes:
+      - ./output-agent-example:/output:rw
+    networks:
+      - certs
+
+networks:
+  certs:

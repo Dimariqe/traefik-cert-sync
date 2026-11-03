@@ -26,7 +26,7 @@ RUN --mount=type=cache,target=/root/.cargo/registry \
     cargo build --release --locked --target "$RUST_TARGET" && \
     cp "target/$RUST_TARGET/release/traefik-cert-sync" /traefik-cert-sync
 
-FROM alpine:3.24.2
+FROM alpine:3.24.3
 
 # openssl CLI backs the optional COMBINE_PKCS12 / CONVERT_KEYS_TO_RSA steps.
 # Container/service restarts talk to the Docker Engine API over the mounted
